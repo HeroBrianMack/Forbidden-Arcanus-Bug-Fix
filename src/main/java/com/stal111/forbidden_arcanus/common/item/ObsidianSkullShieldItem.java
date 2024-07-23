@@ -44,11 +44,13 @@ import java.util.function.Consumer;
  * @author stal111
  * @since 2021-02-12
  */
-public class ObsidianSkullShieldItem extends Item {
+public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem {
 
     private static final ResourceLocation COUNTER = new ResourceLocation(ForbiddenArcanus.MOD_ID, "tick_counter");
 
     private static final int USE_DURATION = 72000;
+
+    private int counter = 0;
 
     public ObsidianSkullShieldItem(Properties properties) {
         super(properties);
@@ -86,9 +88,16 @@ public class ObsidianSkullShieldItem extends Item {
 
                 if (livingEntity.getLastDamageSource() != null) {
                     tag.putString("DamageSource", livingEntity.getLastDamageSource().getMsgId());
+                } else {
+                    tag.putString("DamageSource", "none");
                 }
-
                 this.getCounter(counterCapability).tick(tag);
+                String damageSource = tag.getString("DamageSource");
+                //System.out.println(tag.getString("DamageSource"));
+                if (damageSource.equals("lava") || damageSource.equals("onFire") || damageSource.equals("inFire")) {
+                    counter++;
+                    tag.putInt("Counter", counter);
+                }
             });
         }
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
@@ -129,7 +138,11 @@ public class ObsidianSkullShieldItem extends Item {
     }
 
     public static int getCounterValue(ItemStack stack) {
-        return stack.getCapability(CounterProvider.CAPABILITY).orElse(new CounterImpl()).getCounter(COUNTER).getValue();
+        if (stack.getItem() instanceof ObsidianSkullShieldItem shield) {
+            return shield.counter;
+        }
+        else return 0;
+//        return stack.getCapability(CounterProvider.CAPABILITY).orElse(new CounterImpl()).getCounter(COUNTER).getValue();
     }
 
     @Override

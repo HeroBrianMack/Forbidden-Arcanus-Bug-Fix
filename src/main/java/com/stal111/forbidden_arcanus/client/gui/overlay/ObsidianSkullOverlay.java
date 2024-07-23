@@ -2,6 +2,7 @@ package com.stal111.forbidden_arcanus.client.gui.overlay;
 
 import com.google.common.collect.ImmutableSet;
 import com.stal111.forbidden_arcanus.ForbiddenArcanus;
+import com.stal111.forbidden_arcanus.common.item.IFireProtectionItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullShieldItem;
 import com.stal111.forbidden_arcanus.core.config.RenderingConfig;
@@ -44,16 +45,23 @@ public class ObsidianSkullOverlay implements IGuiOverlay {
             stack = ObsidianSkullShieldItem.getSkullWithLowestCounter(player.getInventory());
         }
 
-        int value = ObsidianSkullItem.getCounterValue(stack);
+        // Default Value
+        int value = ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME + 1;
+
+        if (stack.getItem() instanceof ObsidianSkullItem skull) {
+            value = IFireProtectionItem.getCounterValue(stack);
+        }
 
         ChatFormatting color = value / 20 >= 25 ? ChatFormatting.RED : ChatFormatting.WHITE;
         int posX = RenderingConfig.ORB_OF_TEMPORARY_FLIGHT_OVERLAY_X_POSITION.get();
         int posY = RenderingConfig.ORB_OF_TEMPORARY_FLIGHT_OVERLAY_Y_POSITION.get();
 
-        guiGraphics.blit(TEXTURE, posX, posY, 0, 0, 0, 57, 25, 64, 32);
+        if (value <= ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME) {
+            guiGraphics.blit(TEXTURE, posX, posY, 0, 0, 0, 57, 25, 64, 32);
 
-        guiGraphics.renderFakeItem(stack, posX + 5, (int) (posY + 5.5F));
+            guiGraphics.renderFakeItem(stack, posX + 5, (int) (posY + 5.5F));
 
-        guiGraphics.drawString(minecraft.font, StringUtil.formatTickDuration(ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME - value), posX + 27, posY + 9, color.getColor());
+            guiGraphics.drawString(minecraft.font, StringUtil.formatTickDuration(ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME - value), posX + 27, posY + 9, color.getColor());
+        }
     }
 }

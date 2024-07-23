@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.StandingAndWallBlockItem;
@@ -35,6 +36,7 @@ import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCapabil
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCreator;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterImpl;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterProvider;
+import static com.stal111.forbidden_arcanus.common.item.IFireProtectionItem.getCounterValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,13 +47,17 @@ import java.util.function.Consumer;
  * @author stal111
  * @since 2021-02-11
  */
-public class ObsidianSkullItem extends StandingAndWallBlockItem {
+public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFireProtectionItem {
 
     public static final int OBSIDIAN_SKULL_PROTECTION_TIME = 600;
 
     private static final ResourceLocation COUNTER = new ResourceLocation(ForbiddenArcanus.MOD_ID, "tick_counter");
 
+    private int counter = 0;
+
     private final boolean eternal;
+
+    private boolean expired = false;
 
     public ObsidianSkullItem(Block floorBlock, Block wallBlock, boolean eternal, Properties properties) {
         super(floorBlock, wallBlock, properties, Direction.DOWN);
@@ -77,15 +83,35 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem {
 
     @Override
     public void inventoryTick(@Nonnull ItemStack stack, @Nonnull Level level, @Nonnull Entity entity, int itemSlot, boolean isSelected) {
-        if (entity instanceof LivingEntity livingEntity && !this.eternal) {
+        if (entity instanceof LivingEntity livingEntity && !this.eternal && !level.isClientSide) {
             stack.getCapability(CounterProvider.CAPABILITY).ifPresent(counterCapability -> {
-                CompoundTag tag = new CompoundTag();
+                CompoundTag tag = stack.getOrCreateTag();
+                counter = tag.getInt("Counter");
 
-                if (livingEntity.getLastDamageSource() != null) {
+                if (livingEntity.level().getGameTime() - tag.getLong("Damage Stamp") < damageGapTime) {
                     tag.putString("DamageSource", livingEntity.getLastDamageSource().getMsgId());
+                } else {
+                    tag.putString("DamageSource", "none");
                 }
-
                 this.getCounter(counterCapability).tick(tag);
+                String damageSource = tag.getString("DamageSource");
+                //System.out.println(tag.getString("DamageSource"));
+                if (!stack.getOrCreateTag().contains("Counter")) {
+                    stack.getOrCreateTag().putInt("Counter", 0);
+                }
+                if ((damageSource.equals("lava") || damageSource.equals("onFire")
+                        || damageSource.equals("inFire"))
+                        && stack.matches(stack, getSkullWithLowestCounter(Minecraft.getInstance().player.getInventory()))) {
+                    if (counter <= OBSIDIAN_SKULL_PROTECTION_TIME) {
+                        counter++;
+                        // Accounting for excluding client-side
+                        counter++;
+                        tag.putInt("Counter", counter);
+                        System.out.println(counter);
+                    } else {
+                        expired = true;
+                    }
+                }
             });
         }
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
@@ -109,24 +135,26 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem {
         return getCounterValue(stack) < OBSIDIAN_SKULL_PROTECTION_TIME;
     }
 
+    public static boolean isExpired(ItemStack stack) {
+        if (stack.getItem() instanceof ObsidianSkullItem skull) {
+            return skull.expired;
+        }
+        return true;
+    }
+
     public static ItemStack getSkullWithLowestCounter(Inventory inventory) {
         ItemStack skull = ItemStack.EMPTY;
 
         for (NonNullList<ItemStack> nonNullList : inventory.compartments) {
             for (ItemStack stack : nonNullList) {
                 if (!stack.isEmpty() && stack.is(ModItems.OBSIDIAN_SKULL.get())) {
-                    if (skull.isEmpty() || getCounterValue(skull) > getCounterValue(stack)) {
+                    if (skull.isEmpty()|| getCounterValue(stack) < getCounterValue(skull)) {
                         skull = stack;
                     }
                 }
             }
         }
-
         return skull;
-    }
-
-    public static int getCounterValue(ItemStack stack) {
-        return stack.getCapability(CounterProvider.CAPABILITY).orElse(new CounterImpl()).getCounter(COUNTER).getValue();
     }
 
     @Override

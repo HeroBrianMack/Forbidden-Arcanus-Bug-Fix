@@ -24,8 +24,12 @@ public class EntityEvents {
         //On Player damaged
         if (entity instanceof Player player) {
             Inventory inventory = player.getInventory();
-
-            if (ObsidianSkullItem.shouldProtectFromDamage(source, inventory) || ObsidianSkullShieldItem.shouldProtectFromDamage(source, inventory)) {
+            if (ObsidianSkullItem.shouldProtectFromDamage(source, inventory)) {
+                ObsidianSkullItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
+                event.setCanceled(true);
+                return;
+            } else if (ObsidianSkullShieldItem.shouldProtectFromDamage(source, inventory)) {
+                ObsidianSkullShieldItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
                 event.setCanceled(true);
                 return;
             }
