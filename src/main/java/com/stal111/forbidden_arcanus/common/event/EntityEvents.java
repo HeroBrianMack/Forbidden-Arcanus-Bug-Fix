@@ -1,6 +1,7 @@
 package com.stal111.forbidden_arcanus.common.event;
 
 import com.stal111.forbidden_arcanus.common.item.BloodTestTubeItem;
+import com.stal111.forbidden_arcanus.common.item.IFireProtectionItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullShieldItem;
 import com.stal111.forbidden_arcanus.core.init.ModItems;
@@ -25,12 +26,8 @@ public class EntityEvents {
         //On Player damaged
         if (entity instanceof Player player) {
             Inventory inventory = player.getInventory();
-            if (ObsidianSkullItem.shouldProtectFromDamage(source, inventory)) {
-                ObsidianSkullItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
-                event.setCanceled(true);
-                return;
-            } else if (ObsidianSkullShieldItem.shouldProtectFromDamage(source, inventory)) {
-                ObsidianSkullShieldItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
+            if (IFireProtectionItem.shouldProtectFromDamage(source, inventory)) {
+                IFireProtectionItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
                 event.setCanceled(true);
                 return;
             }

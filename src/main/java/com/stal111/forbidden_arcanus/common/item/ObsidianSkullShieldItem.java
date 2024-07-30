@@ -103,23 +103,7 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
     }
 
-    public static boolean shouldProtectFromDamage(DamageSource damageSource, Inventory inventory) {
-        if (!damageSource.is(DamageTypeTags.IS_FIRE)) {
-            return false;
-        }
 
-        if (inventory.contains(ModItems.Stacks.ETERNAL_OBSIDIAN_SKULL)) {
-            return true;
-        }
-
-        ItemStack stack = getSkullWithLowestCounter(inventory);
-
-        if (stack.isEmpty()) {
-            return false;
-        }
-
-        return getCounterValue(stack) < ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME;
-    }
 
     public static ItemStack getSkullWithLowestCounter(Inventory inventory) {
         ItemStack skull = ItemStack.EMPTY;

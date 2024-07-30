@@ -39,7 +39,7 @@ public class ObsidianSkullOverlay implements IGuiOverlay {
             return;
         }
 
-        ItemStack stack = ObsidianSkullItem.getSkullWithLowestCounter(player.getInventory());
+        ItemStack stack = IFireProtectionItem.getSkullWithLowestCounter(player.getInventory());
 
         if (stack.isEmpty()) {
             stack = ObsidianSkullShieldItem.getSkullWithLowestCounter(player.getInventory());

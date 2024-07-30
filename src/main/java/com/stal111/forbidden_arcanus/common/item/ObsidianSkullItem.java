@@ -101,7 +101,7 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFire
                 }
                 if ((damageSource.equals("lava") || damageSource.equals("onFire")
                         || damageSource.equals("inFire"))
-                        && stack.matches(stack, getSkullWithLowestCounter(Minecraft.getInstance().player.getInventory()))) {
+                        && stack.matches(stack, IFireProtectionItem.getSkullWithLowestCounter(Minecraft.getInstance().player.getInventory()))) {
                     if (counter <= OBSIDIAN_SKULL_PROTECTION_TIME) {
                         counter++;
                         // Accounting for excluding client-side
@@ -117,23 +117,6 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFire
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
     }
 
-    public static boolean shouldProtectFromDamage(DamageSource damageSource, Inventory inventory) {
-        if (!damageSource.is(DamageTypeTags.IS_FIRE)) {
-            return false;
-        }
-
-        if (inventory.contains(ModItems.Stacks.ETERNAL_OBSIDIAN_SKULL)) {
-            return true;
-        }
-
-        ItemStack stack = getSkullWithLowestCounter(inventory);
-
-        if (stack.isEmpty()) {
-            return false;
-        }
-
-        return getCounterValue(stack) < OBSIDIAN_SKULL_PROTECTION_TIME;
-    }
 
     public static boolean isExpired(ItemStack stack) {
         if (stack.getItem() instanceof ObsidianSkullItem skull) {
@@ -142,20 +125,7 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFire
         return true;
     }
 
-    public static ItemStack getSkullWithLowestCounter(Inventory inventory) {
-        ItemStack skull = ItemStack.EMPTY;
 
-        for (NonNullList<ItemStack> nonNullList : inventory.compartments) {
-            for (ItemStack stack : nonNullList) {
-                if (!stack.isEmpty() && stack.is(ModItems.OBSIDIAN_SKULL.get())) {
-                    if (skull.isEmpty()|| getCounterValue(stack) < getCounterValue(skull)) {
-                        skull = stack;
-                    }
-                }
-            }
-        }
-        return skull;
-    }
 
     @Override
     public void appendHoverText(@Nonnull ItemStack stack, Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
