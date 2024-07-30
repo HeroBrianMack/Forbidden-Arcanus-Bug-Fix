@@ -5,20 +5,16 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 // Technically not necessary, but this interface makes the skull and shield more modular
 public interface IFireProtectionItem {
 
-    // Normal entity gap time is much too long
-    final long damageGapTime = 10L;
+    // Normal entity gap time is too long
+    long damageGapTime = 10L;
 
-    long lastDamageStamp = 0L;
-
+    // The amount of time in ticks that the fire protection protects for
     int protectionTime = 600;
-
-
 
     static int getCounterValue(ItemStack stack) {
         if (stack.getOrCreateTag().contains("Counter")) {
@@ -51,6 +47,7 @@ public interface IFireProtectionItem {
         }
         return (getCounterValue(compareSkull) > getCounterValue(skull));
     }
+
     static boolean shouldProtectFromDamage(DamageSource damageSource, Inventory inventory) {
         if (!damageSource.is(DamageTypeTags.IS_FIRE)) {
             return false;

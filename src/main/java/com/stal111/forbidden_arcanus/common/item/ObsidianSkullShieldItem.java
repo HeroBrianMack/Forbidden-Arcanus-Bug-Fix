@@ -2,14 +2,12 @@ package com.stal111.forbidden_arcanus.common.item;
 
 import com.stal111.forbidden_arcanus.ForbiddenArcanus;
 import com.stal111.forbidden_arcanus.client.renderer.item.ObsidianSkullShieldItemRenderer;
-import com.stal111.forbidden_arcanus.common.item.counter.ObsidianSkullCounter;
 import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -23,13 +21,11 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.NonNullLazy;
-import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCreator;
-import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterProvider;
+
+
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -38,8 +34,6 @@ import java.util.function.Consumer;
  * @since 2021-02-12
  */
 public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem {
-
-    private static final ResourceLocation COUNTER = new ResourceLocation(ForbiddenArcanus.MOD_ID, "tick_counter");
 
     private static final int USE_DURATION = 72000;
 
@@ -73,33 +67,31 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
         return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
+    // May compact this method with the interface in the future
     @Override
     public void inventoryTick(@Nonnull ItemStack stack, @Nonnull Level level, @Nonnull Entity entity, int itemSlot, boolean isSelected) {
         if (entity instanceof LivingEntity livingEntity && !level.isClientSide) {
-            stack.getCapability(CounterProvider.CAPABILITY).ifPresent(counterCapability -> {
-                CompoundTag tag = stack.getOrCreateTag();
-                counter = tag.getInt("Counter");
-
-                if (livingEntity.level().getGameTime() - tag.getLong("Damage Stamp") < damageGapTime) {
-                    tag.putString("DamageSource", livingEntity.getLastDamageSource().getMsgId());
-                } else {
-                    tag.putString("DamageSource", "none");
+            CompoundTag tag = stack.getOrCreateTag();
+            counter = tag.getInt("Counter");
+            if (livingEntity.level().getGameTime() - tag.getLong("Damage Stamp") < damageGapTime) {
+                tag.putString("DamageSource", livingEntity.getLastDamageSource().getMsgId());
+            } else {
+                tag.putString("DamageSource", "none");
+            }
+            String damageSource = tag.getString("DamageSource");
+            if (!stack.getOrCreateTag().contains("Counter")) {
+                stack.getOrCreateTag().putInt("Counter", 0);
+            }
+            if ((damageSource.equals("lava") || damageSource.equals("onFire")
+                    || damageSource.equals("inFire"))
+                    && stack.matches(stack, IFireProtectionItem.getSkullWithHighestCounter(Minecraft.getInstance().player.getInventory()))) {
+                if (counter <= protectionTime) {
+                    counter++;
+                    // Accounting for excluding client-side
+                    counter++;
+                    tag.putInt("Counter", counter);
                 }
-                String damageSource = tag.getString("DamageSource");
-                if (!stack.getOrCreateTag().contains("Counter")) {
-                    stack.getOrCreateTag().putInt("Counter", 0);
-                }
-                if ((damageSource.equals("lava") || damageSource.equals("onFire")
-                        || damageSource.equals("inFire"))
-                        && stack.matches(stack, IFireProtectionItem.getSkullWithHighestCounter(Minecraft.getInstance().player.getInventory()))) {
-                    if (counter <= protectionTime) {
-                        counter++;
-                        // Accounting for excluding client-side
-                        counter++;
-                        tag.putInt("Counter", counter);
-                    }
-                }
-            });
+            }
         }
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
     }
@@ -125,11 +117,5 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
                 return renderer.get();
             }
         });
-    }
-
-    @Nullable
-    @Override
-    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag tag) {
-        return new CounterProvider(CounterCreator.of(ObsidianSkullCounter::new, COUNTER));
     }
 }
