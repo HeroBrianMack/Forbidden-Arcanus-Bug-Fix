@@ -3,8 +3,6 @@ package com.stal111.forbidden_arcanus.common.event;
 import com.stal111.forbidden_arcanus.common.aureal.AurealHelper;
 import com.stal111.forbidden_arcanus.common.item.BloodTestTubeItem;
 import com.stal111.forbidden_arcanus.common.item.IFireProtectionItem;
-import com.stal111.forbidden_arcanus.common.item.ObsidianSkullItem;
-import com.stal111.forbidden_arcanus.common.item.ObsidianSkullShieldItem;
 import com.stal111.forbidden_arcanus.core.config.AurealConfig;
 import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.world.damagesource.DamageSource;
@@ -30,7 +28,7 @@ public class EntityEvents {
         if (entity instanceof Player player) {
             Inventory inventory = player.getInventory();
             if (IFireProtectionItem.shouldProtectFromDamage(source, inventory)) {
-                IFireProtectionItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
+                IFireProtectionItem.getSkullWithHighestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
                 event.setCanceled(true);
             }
         }

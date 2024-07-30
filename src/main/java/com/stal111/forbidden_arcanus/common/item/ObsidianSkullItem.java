@@ -3,25 +3,19 @@ package com.stal111.forbidden_arcanus.common.item;
 import com.stal111.forbidden_arcanus.ForbiddenArcanus;
 import com.stal111.forbidden_arcanus.client.renderer.item.ObsidianSkullItemRenderer;
 import com.stal111.forbidden_arcanus.common.item.counter.ObsidianSkullCounter;
-import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockSource;
 import net.minecraft.core.Direction;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.dispenser.OptionalDispenseItemBehavior;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.StandingAndWallBlockItem;
@@ -34,9 +28,7 @@ import net.minecraftforge.common.util.NonNullLazy;
 import net.valhelsia.valhelsia_core.api.common.counter.SerializableCounter;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCapability;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCreator;
-import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterImpl;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterProvider;
-import static com.stal111.forbidden_arcanus.common.item.IFireProtectionItem.getCounterValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,15 +41,13 @@ import java.util.function.Consumer;
  */
 public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFireProtectionItem {
 
-    public static final int OBSIDIAN_SKULL_PROTECTION_TIME = 600;
+
 
     private static final ResourceLocation COUNTER = new ResourceLocation(ForbiddenArcanus.MOD_ID, "tick_counter");
 
     private int counter = 0;
 
     private final boolean eternal;
-
-    private boolean expired = false;
 
     public ObsidianSkullItem(Block floorBlock, Block wallBlock, boolean eternal, Properties properties) {
         super(floorBlock, wallBlock, properties, Direction.DOWN);
@@ -95,37 +85,23 @@ public class ObsidianSkullItem extends StandingAndWallBlockItem implements IFire
                 }
                 this.getCounter(counterCapability).tick(tag);
                 String damageSource = tag.getString("DamageSource");
-                //System.out.println(tag.getString("DamageSource"));
                 if (!stack.getOrCreateTag().contains("Counter")) {
                     stack.getOrCreateTag().putInt("Counter", 0);
                 }
                 if ((damageSource.equals("lava") || damageSource.equals("onFire")
                         || damageSource.equals("inFire"))
-                        && stack.matches(stack, IFireProtectionItem.getSkullWithLowestCounter(Minecraft.getInstance().player.getInventory()))) {
-                    if (counter <= OBSIDIAN_SKULL_PROTECTION_TIME) {
+                        && stack.matches(stack, IFireProtectionItem.getSkullWithHighestCounter(Minecraft.getInstance().player.getInventory()))) {
+                    if (counter <= protectionTime) {
                         counter++;
                         // Accounting for excluding client-side
                         counter++;
                         tag.putInt("Counter", counter);
-                        System.out.println(counter);
-                    } else {
-                        expired = true;
                     }
                 }
             });
         }
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
     }
-
-
-    public static boolean isExpired(ItemStack stack) {
-        if (stack.getItem() instanceof ObsidianSkullItem skull) {
-            return skull.expired;
-        }
-        return true;
-    }
-
-
 
     @Override
     public void appendHoverText(@Nonnull ItemStack stack, Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {

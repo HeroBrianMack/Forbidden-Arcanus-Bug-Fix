@@ -7,17 +7,13 @@ import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -29,10 +25,7 @@ import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.NonNullLazy;
-import net.valhelsia.valhelsia_core.api.common.counter.SerializableCounter;
-import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCapability;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterCreator;
-import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterImpl;
 import net.valhelsia.valhelsia_core.api.common.counter.capability.CounterProvider;
 
 import javax.annotation.Nonnull;
@@ -82,21 +75,29 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
 
     @Override
     public void inventoryTick(@Nonnull ItemStack stack, @Nonnull Level level, @Nonnull Entity entity, int itemSlot, boolean isSelected) {
-        if (entity instanceof LivingEntity livingEntity) {
+        if (entity instanceof LivingEntity livingEntity && !level.isClientSide) {
             stack.getCapability(CounterProvider.CAPABILITY).ifPresent(counterCapability -> {
-                CompoundTag tag = new CompoundTag();
+                CompoundTag tag = stack.getOrCreateTag();
+                counter = tag.getInt("Counter");
 
-                if (livingEntity.getLastDamageSource() != null) {
+                if (livingEntity.level().getGameTime() - tag.getLong("Damage Stamp") < damageGapTime) {
                     tag.putString("DamageSource", livingEntity.getLastDamageSource().getMsgId());
                 } else {
                     tag.putString("DamageSource", "none");
                 }
-                this.getCounter(counterCapability).tick(tag);
                 String damageSource = tag.getString("DamageSource");
-                //System.out.println(tag.getString("DamageSource"));
-                if (damageSource.equals("lava") || damageSource.equals("onFire") || damageSource.equals("inFire")) {
-                    counter++;
-                    tag.putInt("Counter", counter);
+                if (!stack.getOrCreateTag().contains("Counter")) {
+                    stack.getOrCreateTag().putInt("Counter", 0);
+                }
+                if ((damageSource.equals("lava") || damageSource.equals("onFire")
+                        || damageSource.equals("inFire"))
+                        && stack.matches(stack, IFireProtectionItem.getSkullWithHighestCounter(Minecraft.getInstance().player.getInventory()))) {
+                    if (counter <= protectionTime) {
+                        counter++;
+                        // Accounting for excluding client-side
+                        counter++;
+                        tag.putInt("Counter", counter);
+                    }
                 }
             });
         }
@@ -130,9 +131,5 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag tag) {
         return new CounterProvider(CounterCreator.of(ObsidianSkullCounter::new, COUNTER));
-    }
-
-    private SerializableCounter getCounter(CounterCapability counterCapability) {
-        return counterCapability.getCounter(COUNTER);
     }
 }

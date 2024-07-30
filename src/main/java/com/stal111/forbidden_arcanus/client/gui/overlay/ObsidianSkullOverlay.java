@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableSet;
 import com.stal111.forbidden_arcanus.ForbiddenArcanus;
 import com.stal111.forbidden_arcanus.common.item.IFireProtectionItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullItem;
-import com.stal111.forbidden_arcanus.common.item.ObsidianSkullShieldItem;
 import com.stal111.forbidden_arcanus.core.config.RenderingConfig;
 import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.ChatFormatting;
@@ -39,16 +38,12 @@ public class ObsidianSkullOverlay implements IGuiOverlay {
             return;
         }
 
-        ItemStack stack = IFireProtectionItem.getSkullWithLowestCounter(player.getInventory());
-
-        if (stack.isEmpty()) {
-            stack = ObsidianSkullShieldItem.getSkullWithLowestCounter(player.getInventory());
-        }
+        ItemStack stack = IFireProtectionItem.getSkullWithHighestCounter(player.getInventory());
 
         // Default Value
-        int value = ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME + 1;
+        int value = ObsidianSkullItem.protectionTime + 1;
 
-        if (stack.getItem() instanceof ObsidianSkullItem skull) {
+        if (stack.getItem() instanceof IFireProtectionItem) {
             value = IFireProtectionItem.getCounterValue(stack);
         }
 
@@ -56,12 +51,12 @@ public class ObsidianSkullOverlay implements IGuiOverlay {
         int posX = RenderingConfig.ORB_OF_TEMPORARY_FLIGHT_OVERLAY_X_POSITION.get();
         int posY = RenderingConfig.ORB_OF_TEMPORARY_FLIGHT_OVERLAY_Y_POSITION.get();
 
-        if (value <= ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME) {
+        if (value < ObsidianSkullItem.protectionTime) {
             guiGraphics.blit(TEXTURE, posX, posY, 0, 0, 0, 57, 25, 64, 32);
 
             guiGraphics.renderFakeItem(stack, posX + 5, (int) (posY + 5.5F));
 
-            guiGraphics.drawString(minecraft.font, StringUtil.formatTickDuration(ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME - value), posX + 27, posY + 9, color.getColor());
+            guiGraphics.drawString(minecraft.font, StringUtil.formatTickDuration(ObsidianSkullItem.protectionTime - value), posX + 27, posY + 9, color.getColor());
         }
     }
 }

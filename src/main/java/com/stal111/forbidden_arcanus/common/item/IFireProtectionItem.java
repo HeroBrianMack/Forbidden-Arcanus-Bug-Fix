@@ -5,8 +5,10 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+// Technically not necessary, but this interface makes the skull and shield more modular
 public interface IFireProtectionItem {
 
     // Normal entity gap time is much too long
@@ -14,7 +16,9 @@ public interface IFireProtectionItem {
 
     long lastDamageStamp = 0L;
 
-    // Technically not necessary, but this interface makes the skull and shield more modular
+    int protectionTime = 600;
+
+
 
     static int getCounterValue(ItemStack stack) {
         if (stack.getOrCreateTag().contains("Counter")) {
@@ -24,13 +28,12 @@ public interface IFireProtectionItem {
         else return 9999;
     }
 
-    static ItemStack getSkullWithLowestCounter(Inventory inventory) {
+    static ItemStack getSkullWithHighestCounter(Inventory inventory) {
         ItemStack skull = ItemStack.EMPTY;
-
         for (NonNullList<ItemStack> nonNullList : inventory.compartments) {
             for (ItemStack stack : nonNullList) {
                 if (!stack.isEmpty() && (stack.is(ModItems.OBSIDIAN_SKULL.get()) || stack.is(ModItems.OBSIDIAN_SKULL_SHIELD.get()))) {
-                    if (skull.isEmpty() || getCounterValue(stack) < getCounterValue(skull)) {
+                    if (skull.isEmpty() || isSkullCounterGreater(skull, stack)) {
                         skull = stack;
                     }
                 }
@@ -39,6 +42,15 @@ public interface IFireProtectionItem {
         return skull;
     }
 
+    static boolean isSkullCounterGreater(ItemStack skull, ItemStack compareSkull) {
+        if (getCounterValue(compareSkull) >= protectionTime) {
+            return false;
+        }
+        if (getCounterValue(skull) >= protectionTime) {
+            return true;
+        }
+        return (getCounterValue(compareSkull) > getCounterValue(skull));
+    }
     static boolean shouldProtectFromDamage(DamageSource damageSource, Inventory inventory) {
         if (!damageSource.is(DamageTypeTags.IS_FIRE)) {
             return false;
@@ -48,13 +60,13 @@ public interface IFireProtectionItem {
             return true;
         }
 
-        ItemStack stack = IFireProtectionItem.getSkullWithLowestCounter(inventory);
+        ItemStack stack = IFireProtectionItem.getSkullWithHighestCounter(inventory);
 
         if (stack.isEmpty()) {
             return false;
         }
 
-        return getCounterValue(stack) < ObsidianSkullItem.OBSIDIAN_SKULL_PROTECTION_TIME;
+        return getCounterValue(stack) < protectionTime;
     }
 
 }
