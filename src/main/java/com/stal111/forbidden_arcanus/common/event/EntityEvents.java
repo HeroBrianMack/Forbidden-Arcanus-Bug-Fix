@@ -1,9 +1,11 @@
 package com.stal111.forbidden_arcanus.common.event;
 
+import com.stal111.forbidden_arcanus.common.aureal.AurealHelper;
 import com.stal111.forbidden_arcanus.common.item.BloodTestTubeItem;
 import com.stal111.forbidden_arcanus.common.item.IFireProtectionItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullItem;
 import com.stal111.forbidden_arcanus.common.item.ObsidianSkullShieldItem;
+import com.stal111.forbidden_arcanus.core.config.AurealConfig;
 import com.stal111.forbidden_arcanus.core.init.ModItems;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -12,6 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -19,7 +22,7 @@ import net.minecraftforge.fml.common.Mod;
 public class EntityEvents {
 
     @SubscribeEvent
-    public static void onEntityDamage(LivingHurtEvent event) {
+    public static void onPlayerDamage(LivingHurtEvent event) {
         DamageSource source = event.getSource();
         LivingEntity entity = event.getEntity();
 
@@ -29,10 +32,15 @@ public class EntityEvents {
             if (IFireProtectionItem.shouldProtectFromDamage(source, inventory)) {
                 IFireProtectionItem.getSkullWithLowestCounter(inventory).getOrCreateTag().putLong("Damage Stamp", player.level().getGameTime());
                 event.setCanceled(true);
-                return;
             }
         }
+    }
 
+    @SubscribeEvent
+    public static void onEntityDamage(LivingDamageEvent event) {
+        DamageSource source = event.getSource();
+
+        //On Player attack
         if (source.is(DamageTypes.PLAYER_ATTACK) && source.getEntity() instanceof Player player) {
             if (player.getMainHandItem().is(ModItems.MYSTICAL_DAGGER.get())) {
                 BloodTestTubeItem.collectBlood(player, event.getAmount());
@@ -40,14 +48,13 @@ public class EntityEvents {
         }
     }
 
+    // Potential Aureal Mobspawn fix
+    @SubscribeEvent
+    public static void onCheckSpawn(MobSpawnEvent event) {
+        LivingEntity entity = event.getEntity();
 
-    //TODO
-//    @SubscribeEvent
-//    public static void onCheckSpawn(LivingSpawnEvent.CheckSpawn event) {
-//        LivingEntity entity = event.getEntity();
-//
-//        if (AurealHelper.canEntityBeAureal(entity) && entity.getRandom().nextDouble() <= AurealConfig.AUREAL_ENTITY_SPAWN_CHANCE.get()) {
-//            entity.getPersistentData().putBoolean("aureal", true);
-//        }
-//    }
+        if (AurealHelper.canEntityBeAureal(entity) && entity.getRandom().nextDouble() <= AurealConfig.AUREAL_ENTITY_SPAWN_CHANCE.get()) {
+            entity.getPersistentData().putBoolean("aureal", true);
+        }
+    }
 }
