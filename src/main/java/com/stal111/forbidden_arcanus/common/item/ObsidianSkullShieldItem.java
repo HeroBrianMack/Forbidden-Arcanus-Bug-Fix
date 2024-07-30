@@ -103,32 +103,6 @@ public class ObsidianSkullShieldItem extends Item implements IFireProtectionItem
         super.inventoryTick(stack, level, entity, itemSlot, isSelected);
     }
 
-
-
-    public static ItemStack getSkullWithLowestCounter(Inventory inventory) {
-        ItemStack skull = ItemStack.EMPTY;
-
-        for (NonNullList<ItemStack> nonNullList : inventory.compartments) {
-            for (ItemStack stack : nonNullList) {
-                if (!stack.isEmpty() && stack.is(ModItems.OBSIDIAN_SKULL_SHIELD.get())) {
-                    if (skull.isEmpty() || getCounterValue(skull) > getCounterValue(stack)) {
-                        skull = stack;
-                    }
-                }
-            }
-        }
-
-        return skull;
-    }
-
-    public static int getCounterValue(ItemStack stack) {
-        if (stack.getItem() instanceof ObsidianSkullShieldItem shield) {
-            return shield.counter;
-        }
-        else return 0;
-//        return stack.getCapability(CounterProvider.CAPABILITY).orElse(new CounterImpl()).getCounter(COUNTER).getValue();
-    }
-
     @Override
     public boolean isValidRepairItem(@Nonnull ItemStack toRepair, ItemStack repair) {
         return repair.is(ModItems.OBSIDIAN_INGOT.get()) || super.isValidRepairItem(toRepair, repair);
